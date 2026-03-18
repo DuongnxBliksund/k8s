@@ -52,6 +52,7 @@ spec:
               valueFrom:
                 secretKeyRef:
                   key: password
+                  
                   name: nginx-secret
           volumeMounts:
             - name: v-nginx-main # Must match the volume name above
