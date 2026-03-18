@@ -1,0 +1,41 @@
+apiVersion: v1
+data:
+  APP_ENV: local
+  app.properties: |
+    APP_MODE=production
+    TIMEOUT=30
+  config.json: |
+    {
+      "API_KEY": "ngkjdfbghdfbgvxcvbxv",
+      "DB_ADMIN_DATABASE": "db1"
+    }
+  nginx.conf.example: |
+    events {}
+
+    http {
+    #    access_log /var/log/nginx/access.log;
+    #    error_log  /var/log/nginx/error.log warn;
+        server {
+            listen 80;
+            server_name _;
+
+            root /var/www/html;
+            index index.html;
+
+            location / {
+                try_files $uri $uri/ =404;
+            }
+            location /startup {
+                add_header X-Probe "startup check";
+                return 200;
+            }
+            location /readiness {
+                add_header X-Probe "readiness check";
+                return 200;
+            }
+        }
+    }
+kind: ConfigMap
+metadata:
+  creationTimestamp: null
+  name: nginx-config

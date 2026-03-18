@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: null
+  labels:
+    app: backend
+  name: backend
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: backend
+  strategy: {}
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: backend
+    spec:
+      containers:
+      - image: hashicorp/http-echo:latest
+        name: http-echo
+        args:
+        - "-text=You have reached the good place!"
+        - "-listen=:8080"
+        ports:
+        - containerPort: 8080
+        resources: {}
+status: {}

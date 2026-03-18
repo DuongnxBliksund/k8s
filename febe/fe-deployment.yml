@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2026-01-10T07:15:00Z"
+  generation: 1
+  labels:
+    app: frontend
+  name: frontend
+  namespace: default
+  resourceVersion: "308990"
+  uid: 9ddaf43f-7bc8-4c94-bd9d-a55c45ae7254
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: frontend
+  strategy:
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+    type: RollingUpdate
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - image: curlimages/curl:latest
+        imagePullPolicy: Always
+        name: curl
+        args:
+        - /bin/sh
+        - -c
+        - |
+          POD="$(hostname)"
+          URL="http://be-service:90"
+          echo "[$POD] curling $URL every 15s..."
+          while true; do
+            echo "Eleanor is trying to fly a baloon to the good place."
+            TS="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            curl -sS --max-time 5 "$URL" \
+              -w " [remote=%{remote_ip}:%{remote_port}]\n" \
+              -o - \
+            || echo "curl error"
+            sleep 15
+          done
+        resources: {}
+        terminationMessagePath: /dev/termination-log
+        terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}

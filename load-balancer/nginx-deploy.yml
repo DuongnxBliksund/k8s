@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  creationTimestamp: "2026-01-19T03:29:22Z"
+  generation: 1
+  labels:
+    app: nginx
+  name: lb-nginx
+  namespace: default
+spec:
+  progressDeadlineSeconds: 600
+  replicas: 3
+  strategy: # rollout strategy
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 25%
+      maxUnavailable: 25%
+  revisionHistoryLimit: 10
+  selector:
+    matchLabels:
+      app: nginx
+  
+  template:
+    metadata:
+      creationTimestamp: null
+      labels:
+        app: nginx
+    spec:
+      volumes:
+        - name: v-nginx-main # Arbitrary volume name defined by myself; used by volumeMounts.name
+          configMap:
+            name: nginx-config # Name of an EXISTING ConfigMap in the same namespace
+            items:
+              - key: nginx.conf.example # KEY inside the ConfigMap data (left-hand side under data:)
+                path: nginx.conf.duong # Path inside the volume where the file will be mounted
+      containers:
+        - image: nginx:1.27
+          imagePullPolicy: Always
+          name: nginx
+          env: # Define environment variables for the container
+            - name: APP_ENV
+              valueFrom: # Indicates that the value comes from a source
+                configMapKeyRef: # Reference a specific key inside a ConfigMap
+                  key: APP_ENV # Key inside the ConfigMap
+                  name: nginx-config # Name of the ConfigMap to reference
+            - name: USERNAME
+              valueFrom:
+                secretKeyRef: # Reference a specific key inside a Secret
+                  key: username # Key inside the Secret
+                  name: nginx-secret # Name of the Secret to reference
+            - name: PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  key: password
+                  name: nginx-secret
+          volumeMounts:
+            - name: v-nginx-main # Must match the volume name above
+              mountPath: /etc/nginx/nginx.conf # Full path where the file will be mounted inside the container
+              subPath: nginx.conf.duong # Must match the path defined in items.path above, so kubernetes knows which file to mount
+          ports:
+            - containerPort: 80
+              protocol: TCP
+          resources:
+            requests:
+              cpu: "100m"
+            limits:
+              cpu: "200m"
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+          startupProbe:
+            httpGet:
+              path: /startup
+              port: 80
+            periodSeconds: 2
+            failureThreshold: 30        
+          readinessProbe:
+            httpGet:
+              path: /readiness
+              port: 80
+            periodSeconds: 30
+            failureThreshold: 2        
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: {}
+      terminationGracePeriodSeconds: 30
+status: {}
