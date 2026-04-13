@@ -27,37 +27,45 @@ spec:
         app: nginx
     spec:
       volumes:
-        - name: v-nginx-main # Arbitrary volume name defined by myself; used by volumeMounts.name
-          configMap:
-            name: nginx-config # Name of an EXISTING ConfigMap in the same namespace
+        # - name: v-nginx-main # Arbitrary volume name defined by myself; used by volumeMounts.name
+        #   configMap:
+        #     name: nginx-config # Name of an EXISTING ConfigMap in the same namespace
+        #     items:
+        #       - key: nginx.conf.example # KEY inside the ConfigMap data (left-hand side under data:)
+        #         path: nginx.conf.duong # Path inside the volume where the file will be mounted
+        - name: v-nginx-secret
+          secret:
+            secretName: nginx-secret-opaque # Name of an EXISTING Secret in the same namespace
             items:
-              - key: nginx.conf.example # KEY inside the ConfigMap data (left-hand side under data:)
-                path: nginx.conf.duong # Path inside the volume where the file will be mounted
+              - key: nginx.conf.example
+                path: nginx.conf.duong
       containers:
         - image: nginx:1.27
           imagePullPolicy: Always
           name: nginx
           env: # Define environment variables for the container
-            - name: APP_ENV
-              valueFrom: # Indicates that the value comes from a source
-                configMapKeyRef: # Reference a specific key inside a ConfigMap
-                  key: APP_ENV # Key inside the ConfigMap
-                  name: nginx-config # Name of the ConfigMap to reference
-            - name: USERNAME
-              valueFrom:
-                secretKeyRef: # Reference a specific key inside a Secret
-                  key: username # Key inside the Secret
-                  name: nginx-secret # Name of the Secret to reference
-            - name: PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  key: password
-                  
-                  name: nginx-secret
+            # - name: APP_ENV
+            #   valueFrom: # Indicates that the value comes from a source
+            #     configMapKeyRef: # Reference a specific key inside a ConfigMap
+            #       key: APP_ENV # Key inside the ConfigMap
+            #       name: nginx-config # Name of the ConfigMap to reference
+            # - name: USERNAME
+            #   valueFrom:
+            #     secretKeyRef: # Reference a specific key inside a Secret
+            #       key: USERNAME # Key inside the Secret
+            #       name: nginx-secret-opaque # Name of the Secret to reference
+            # - name: PASSWORD
+            #   valueFrom:
+            #     secretKeyRef:
+            #       key: password
+            #       name: nginx-secret-basic-auth
           volumeMounts:
-            - name: v-nginx-main # Must match the volume name above
-              mountPath: /etc/nginx/nginx.conf # Full path where the file will be mounted inside the container
-              subPath: nginx.conf.duong # Must match the path defined in items.path above, so kubernetes knows which file to mount
+            # - name: v-nginx-main # Must match the volume name above
+            #   mountPath: /etc/nginx/nginx.conf # Full path where the file will be mounted inside the container
+            #   subPath: nginx.conf.duong # Must match the path defined in items.path above, so kubernetes knows which file to mount
+            - name: v-nginx-secret
+              mountPath: /etc/nginx/nginx.conf
+              subPath: nginx.conf.duong
           ports:
             - containerPort: 80
               protocol: TCP
@@ -80,6 +88,10 @@ spec:
               port: 80
             periodSeconds: 30
             failureThreshold: 2        
+      imagePullSecrets:
+        - name: nginx-secret-docker-registry
+        # - name: nginx-registry-secret2
+        # - name: nginx-registry-secret3
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler
